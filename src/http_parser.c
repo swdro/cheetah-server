@@ -3,9 +3,12 @@
 #include "util.h"
 #include <ctype.h>
 #include <linux/limits.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <time.h>
 
 // hettp methods 
 char *http_methods[] = { 
@@ -127,6 +130,20 @@ http_parser *init_http_parser(http_message_type type, cfuhash_table_t *http_hash
 free http parser
 */
 void free_http_parser(http_parser* parser) {
+    cfuhash_table_t *http_hashmap = parser->http_message;
+    size_t num_keys = 0;
+    char **keys_array_ptr = (char **) cfuhash_keys_data(http_hashmap, &num_keys, NULL, 0);
+    for (size_t i = 0; i < num_keys; i++) {
+        char *key = keys_array_ptr[i];
+        char *value= (char *) cfuhash_get(http_hashmap, key);
+        printf("free this: %s\n", value);
+        free(key);
+        free(value);
+    }
+    free(keys_array_ptr);
+    cfuhash_destroy(parser->http_message);
+    // void **cfuhash_keys_data(cfuhash_table_t *ht, size_t *num_keys, size_t **key_sizes,
+    // 	int fast);
     free(parser);
 }
 

@@ -1,6 +1,6 @@
 CC = gcc
-# CFLAGS = -Wall -Wextra -Werror -g
-CFLAGS = -Wall -Wextra -g
+# CFLAGS = -Wall -Wextra -Werror -g -O0
+CFLAGS = -Wall -Wextra -g -O0
 
 # for linking use install_name_tool to change the 
 # install path embedded in the .dylib binary 

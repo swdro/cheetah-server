@@ -22,9 +22,9 @@ int main() {
     printf("cheetah finished!\n");
 
     // free all memory
-    char *methodStr = (char *) cfuhash_get(http_hashmap, "method");
-    free(methodStr);
-    cfuhash_destroy(http_hashmap);
+    // char *methodStr = (char *) cfuhash_get(http_hashmap, "method");
+    // free(methodStr);
+    // cfuhash_destroy(http_hashmap);
     free_http_parser(parser);
 
     if (rc != 0) {
