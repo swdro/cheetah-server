@@ -1,3 +1,0 @@
-cfu.lo: cfu.c cfu.h
-
-cfu.h:

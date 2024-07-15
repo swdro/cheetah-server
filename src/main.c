@@ -3,17 +3,32 @@
 #include "server.h"
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 int main() {
+    printf("Cheetah initialization \n");
+    // cfuhash_table_t *http_hashmap = cfuhash_new_with_flags(CFUHASH_NO_LOCKING);
+    cfuhash_table_t *http_hashmap = cfuhash_new();
+    http_parser *parser = init_http_parser(HTTP_REQUEST,  http_hashmap);
 
-  printf("Cheetah initialization \n");
+    // initialize data variabels
+    char *data = "HEAD ";
+    size_t data_len = strlen(data);
 
-  http_parser *parser = init_http_parser(HTTP_REQUEST);
+    // test everything
 
-  char *data = "Hello world!!";
-  size_t data_len = strlen(data);
 
-  http_parser_execute(data, data_len, parser);
+    int rc = http_parser_execute(data, data_len, parser);
+    printf("cheetah finished!\n");
 
-  return 0;
+    // free all memory
+    char *methodStr = (char *) cfuhash_get(http_hashmap, "method");
+    free(methodStr);
+    cfuhash_destroy(http_hashmap);
+    free_http_parser(parser);
+
+    if (rc != 0) {
+        return 1;
+    }
+    return 0;
 }

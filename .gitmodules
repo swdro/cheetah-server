@@ -1,0 +1,3 @@
+[submodule "libs/libcfu"]
+	path = libs/libcfu
+	url = https://github.com/codebrainz/libcfu.git
