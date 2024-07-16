@@ -24,12 +24,12 @@ char *http_methods[] = {
 };
 
 // define state functions
-STATE_RETURN_CODE start_state(char *cur_str, char c, cfuhash_table_t *http_message) {
+STATE_RETURN_CODE start_state(char *curr_str, char c, cfuhash_table_t *http_message) {
     return SUCCESS;
 }
 
 STATE_RETURN_CODE method_state(char *method_str, char c, cfuhash_table_t *http_message) {
-    printf("method_state: cur_str: %s\n", method_str);
+    printf("method_state: curr_str: %s\n", method_str);
     if (c == ' ') { 
         int method_str_no_space_len= strlen(method_str);
         char *method_str_no_space = calloc(method_str_no_space_len, sizeof(char));
@@ -56,7 +56,7 @@ STATE_RETURN_CODE method_state(char *method_str, char c, cfuhash_table_t *http_m
         return FAIL;
     } else {
         // copy old string into new string to append character
-        // char *old_str = cur_str;
+        // char *old_str = curr_str;
         // size_t old_str_length = strlen(old_str);
         // char new_str[old_str_length + 2];  // length will include new char and null terminator
         //
@@ -64,16 +64,45 @@ STATE_RETURN_CODE method_state(char *method_str, char c, cfuhash_table_t *http_m
         // new_str[old_str_length] = c;
         // new_str[old_str_length + 1] = '\0';
         // printf("new_str: %s\n", new_str);
-        // cur_str = new_str;
+        // curr_str = new_str;
         return REPEAT;
     }
 }
 
-STATE_RETURN_CODE request_target_state(char *cur_str, char c, cfuhash_table_t *http_message) {
+STATE_RETURN_CODE request_target_state(char *curr_str, char c, cfuhash_table_t *http_message) {
+    /* We will return to this function and parse it into urls sub fields
+    if (c == '/') {
+    } else if (isalpha(c)) {
+    } 
+    */
+    if (strlen(curr_str) > 100) {
+        fprintf(stderr, "Request target strings is above 100 characters\n"); // we can change this later
+        return FAIL;
+    }
+    if (c == ' ') {
+        char *url_str_no_space = removeSpaces(curr_str);
+        printf("URL STRING NO SPACE: %s\n", url_str_no_space);
+        cfuhash_put(http_message, "requestTargetUrl", url_str_no_space); // append to hashmap
+        cfuhash_pretty_print(http_message, stdout);
+        return SUCCESS;
+    }
+    return REPEAT;
+}
+
+
+STATE_RETURN_CODE http_name(char *curr_str, char c, cfuhash_table_t *http_message) {
     return SUCCESS;
 }
 
-STATE_RETURN_CODE end_state(char *cur_str, char c, cfuhash_table_t *http_message) {
+STATE_RETURN_CODE http_version(char *curr_str, char c, cfuhash_table_t *http_message) {
+    return SUCCESS;
+}
+
+STATE_RETURN_CODE new_line_before_headers(char *curr_str, char c, cfuhash_table_t *http_message) {
+    return SUCCESS;
+}
+
+STATE_RETURN_CODE end_state(char *curr_str, char c, cfuhash_table_t *http_message) {
     return SUCCESS;
 }
 
@@ -83,15 +112,22 @@ typedef enum {
     START,
     METHOD,
     REQUEST_TARGET,
-    END,
+    HTTP_NAME,
+    HTTP_VERSION,
+    HTTP_HEADER,
+    NEW_LINE_BEOFRE_HEADERS,
+    END
 } HTTP_PARSER_STATE;
 
 // state functions 
-typedef STATE_RETURN_CODE (*HttpParserStateFunction)(char *cur_str, char c, cfuhash_table_t *http_message);
+typedef STATE_RETURN_CODE (*HttpParserStateFunction)(char *curr_str, char c, cfuhash_table_t *http_message);
 HttpParserStateFunction http_parser_state_functions[] = {
     start_state, 
     method_state, 
     request_target_state, 
+    http_name,
+    http_version,
+    new_line_before_headers,
     end_state
 };
 
@@ -101,20 +137,45 @@ typedef struct {
     STATE_RETURN_CODE return_code;
     HTTP_PARSER_STATE destination_state;
 } Transition;
-Transition transition_states[][2] = {
+
+Transition transition_states[][3] = {
 {
     {START, SUCCESS, METHOD}, 
-    {START, REPEAT, START}
+    {START, REPEAT, START},
+        
     },
 {
     {METHOD, SUCCESS, REQUEST_TARGET},
     {METHOD, REPEAT, METHOD},
     },
 {
-    {REQUEST_TARGET, SUCCESS, END},
+    {REQUEST_TARGET, SUCCESS, HTTP_NAME},
     {REQUEST_TARGET, REPEAT, REQUEST_TARGET},
-    }
+    },
+{
+    {HTTP_NAME, SUCCESS, HTTP_VERSION},
+    {HTTP_NAME, REPEAT, HTTP_NAME},
+    },
+    {
+    {HTTP_VERSION, SUCCESS, NEW_LINE_BEOFRE_HEADERS},
+    {HTTP_VERSION, REPEAT, HTTP_VERSION},
+    },
 };
+
+// Transition **transition_states = {
+// {
+//         {START, SUCCESS, METHOD}, 
+//         {START, REPEAT, START},
+//         {START, FAIL, END}
+// },
+// {
+//         {METHOD, SUCCESS, REQUEST_TARGET},
+//         {METHOD, REPEAT, METHOD}
+// },
+// {
+//         {REQUEST_TARGET, SUCCESS, END},
+//         {REQUEST_TARGET, REPEAT, REQUEST_TARGET},
+// }};
 
 /*
 initialize http_parser
@@ -200,10 +261,22 @@ int http_parser_execute(char *data, size_t data_len, http_parser *parser) {
             curr_str = new_str;
         }
         printf("new curr_str: %s\n", curr_str);
-        
-        HttpParserStateFunction state_function =
-            http_parser_state_functions[curr_state];
+        HttpParserStateFunction state_function = http_parser_state_functions[curr_state];
         STATE_RETURN_CODE rc = state_function(curr_str, curr_char, parser->http_message);
+        // go to next transition state
+        for (int i = 0; i < 2; i++) { // change 2 to whatever the size of inner most keys_array_ptr
+            Transition temp_state = transition_states[curr_state][i];
+            if (temp_state.return_code == rc) {
+                printf("%d -> %d\n", curr_state, temp_state.destination_state);
+                curr_state = temp_state.destination_state;
+                if (rc == SUCCESS) {
+                    free(curr_str);
+                    curr_str = calloc(1, sizeof(char));
+                    curr_str[0] = '\0';
+                }
+                break;
+            }
+        }
         if (rc == FAIL) {
             return 1; // associated function printed to stderr already
         }

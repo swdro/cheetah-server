@@ -1,6 +1,5 @@
 #include "util.h"
 #include <string.h>
-#include <stdlib.h>
 
 int contains_string(char * const * const string_array, const char *string) {
     // int len = sizeof(string_array) / sizeof(string_array[0]);
@@ -16,12 +15,10 @@ int contains_string(char * const * const string_array, const char *string) {
 
 char *removeSpaces(char *input) {
     size_t input_len = strlen(input);
-    char *output = calloc(input_len + 1, sizeof(char)); // account for null terminator
-    int j = 0;
+    char *output = calloc(sizeof(char) * input_len);
     for (int i = 0; input[i] != '\0'; i++) {
-        if (input[i] != ' ') {
-            output[j++] = input[i];
+        if (input[i] == ' ') {
+
         }
     }
-    return output;
 }

@@ -4,31 +4,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
+
+int test(char *http_message) {
+    cfuhash_table_t *http_hashmap = cfuhash_new();
+    http_parser *parser = init_http_parser(HTTP_REQUEST,  http_hashmap);
+    int testHttpParser = http_parser_execute(http_message, strlen(http_message), parser);
+    free_http_parser(parser);
+    return testHttpParser;
+}
 
 int main() {
     printf("Cheetah initialization \n");
-    // cfuhash_table_t *http_hashmap = cfuhash_new_with_flags(CFUHASH_NO_LOCKING);
-    cfuhash_table_t *http_hashmap = cfuhash_new();
-    http_parser *parser = init_http_parser(HTTP_REQUEST,  http_hashmap);
 
-    // initialize data variabels
-    char *data = "HEAD ";
-    size_t data_len = strlen(data);
+    // test cases
+    assert(test("HEAD ") == 0);
+    assert(test("GET /helloworld ") == 0);
 
-    // test everything
-
-
-    int rc = http_parser_execute(data, data_len, parser);
-    printf("cheetah finished!\n");
-
-    // free all memory
-    // char *methodStr = (char *) cfuhash_get(http_hashmap, "method");
-    // free(methodStr);
-    // cfuhash_destroy(http_hashmap);
-    free_http_parser(parser);
-
-    if (rc != 0) {
-        return 1;
-    }
+    printf("All test cases passed!\n");
     return 0;
 }
