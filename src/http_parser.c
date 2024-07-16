@@ -91,7 +91,19 @@ STATE_RETURN_CODE request_target_state(char *curr_str, char c, cfuhash_table_t *
 
 
 STATE_RETURN_CODE http_name(char *curr_str, char c, cfuhash_table_t *http_message) {
-    return SUCCESS;
+    if (c == '/') {
+        size_t curr_str_len = strlen(curr_str);
+        char *http_name_no_forward_slash = calloc(curr_str_len, sizeof(char));
+        strcpy(http_name_no_forward_slash, curr_str);
+        http_name_no_forward_slash[curr_str_len - 1] = '\0';
+        printf("HTTP NAME STRING NO FORWARD SLASH: %s\n", http_name_no_forward_slash);
+        if (strcmp(http_name_no_forward_slash, "HTTP") == 0) {
+            return SUCCESS;
+        }
+    } else if (isupper(c) && strlen(curr_str) < 5) { // haven't reached full string "HTTP"
+        return REPEAT;
+    } 
+    return FAIL;
 }
 
 STATE_RETURN_CODE http_version(char *curr_str, char c, cfuhash_table_t *http_message) {
@@ -278,6 +290,7 @@ int http_parser_execute(char *data, size_t data_len, http_parser *parser) {
             }
         }
         if (rc == FAIL) {
+            printf("Failed, returning.. \n");
             return 1; // associated function printed to stderr already
         }
     }
