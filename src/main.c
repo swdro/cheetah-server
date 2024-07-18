@@ -21,6 +21,7 @@ int main() {
     assert(test("HEAD ") == 0);
     assert(test("GET /helloworld ") == 0);
     assert(test("GET /helloworld HTTP/") == 0);
+    assert(test("GET /helloworld HTTP/1.1") == 0);
 
     printf("All test cases passed!\n");
     return 0;

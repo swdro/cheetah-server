@@ -82,7 +82,7 @@ STATE_RETURN_CODE request_target_state(char *curr_str, char c, cfuhash_table_t *
     if (c == ' ') {
         char *url_str_no_space = removeSpaces(curr_str);
         printf("URL STRING NO SPACE: %s\n", url_str_no_space);
-        cfuhash_put(http_message, "requestTargetUrl", url_str_no_space); // append to hashmap
+        cfuhash_put(http_message, "request_target_url", url_str_no_space); // append to hashmap
         cfuhash_pretty_print(http_message, stdout);
         return SUCCESS;
     }
@@ -103,11 +103,24 @@ STATE_RETURN_CODE http_name(char *curr_str, char c, cfuhash_table_t *http_messag
     } else if (isupper(c) && strlen(curr_str) < 5) { // haven't reached full string "HTTP"
         return REPEAT;
     } 
+    fprintf(stderr, "Invalid http name in http version\n");
     return FAIL;
 }
 
 STATE_RETURN_CODE http_version(char *curr_str, char c, cfuhash_table_t *http_message) {
-    return SUCCESS;
+    if (strlen(curr_str) == 1 && isdigit(curr_str[0]) > 0) {
+        return REPEAT;
+    } else if (strlen(curr_str) == 2 && curr_str[1] == '.') {
+        return REPEAT;
+    } else if (strlen(curr_str) == 3 && isdigit(curr_str[2])) {
+        char *http_version_str = duplicateString(curr_str);
+        printf("HTTP VERSION STRING: %s\n", http_version_str);
+        cfuhash_put(http_message, "http_version", http_version_str); // append to hashmap
+        cfuhash_pretty_print(http_message, stdout);
+        return SUCCESS;
+    }
+    fprintf(stderr, "invalid http version format\n");
+    return FAIL;
 }
 
 STATE_RETURN_CODE new_line_before_headers(char *curr_str, char c, cfuhash_table_t *http_message) {

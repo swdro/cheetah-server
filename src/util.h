@@ -3,6 +3,7 @@
 
 int contains_string(char * const * const string_array, const char *string);
 char *removeSpaces(char *input);
+char *duplicateString(char *str);
 
 #endif
 

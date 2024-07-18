@@ -13,7 +13,6 @@ int contains_string(char * const * const string_array, const char *string) {
     return  1;
 }
 
-
 char *removeSpaces(char *input) {
     size_t input_len = strlen(input);
     char *output = calloc(input_len + 1, sizeof(char)); // account for null terminator
@@ -24,4 +23,12 @@ char *removeSpaces(char *input) {
         }
     }
     return output;
+}
+
+char *duplicateString(char *str) {
+    size_t curr_str_len = strlen(str);
+    char *new_str = calloc(curr_str_len + 1, sizeof(char)); // account for null terminator
+    strcpy(new_str, str);
+    str[curr_str_len] = '\0';
+    return new_str;
 }
